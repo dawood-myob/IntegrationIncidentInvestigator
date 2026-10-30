@@ -2,6 +2,21 @@
 
 A Windows WPF application for reviewing local integration-incident evidence, creating an evidence-based investigation with a configurable AI provider, checking recurrence against local history, and preparing copy-ready Teams/Jira content. The first version does not connect to Jira or Teams and never creates tickets or sends messages.
 
+## Start here
+
+1. Follow the [complete user guide](documentation/user-guide.md) to install, run, and investigate an incident.
+2. Configure **one** provider using [credentials and configuration](documentation/configuration.md): where to obtain OpenAI/Claude keys or a Copilot token, exact permissions, masked PowerShell commands, billing, and troubleshooting.
+3. Scan a folder, review file selections and prepared excerpts, then explicitly send the approved evidence to AI.
+4. Review the result, choose new Jira versus existing Jira comment, and copy/save the outputs. Posting and attaching remain manual.
+
+### Documentation
+
+- [User guide: installation, daily workflow, outputs and publishing](documentation/user-guide.md)
+- [Provider keys, authentication commands, configuration and troubleshooting](documentation/configuration.md)
+- [Architecture](documentation/architecture.md)
+- [AI investigation design](documentation/ai-investigation.md)
+- [Recurrence detection](documentation/recurrence-detection.md)
+
 ## Architecture
 
 The solution uses inward-facing Clean Architecture dependencies:
@@ -34,7 +49,7 @@ Select an incident directory, scan and review the files, enter optional system/i
 | Claude | Set `ANTHROPIC_API_KEY` from the Anthropic API console; Claude chat subscriptions are separate. | `AI:Claude:Model` / `AI:Claude:Models`; use a Messages API model with structured-output support. |
 | GitHubCopilot | Sign in with `copilot login` using a Copilot-enabled account and an available model. | `AI:Copilot:Model` / `AI:Copilot:Models`; access and usage limits depend on your plan/policy. |
 
-Restart Visual Studio and the app after setting environment variables. Do not place keys in appsettings or source control. No credentials from this Visual Studio chat are extracted. **GitHub Copilot is not Microsoft 365 Copilot**; a Microsoft 365 Copilot subscription does not provide an interchangeable LLM API credential. Microsoft 365 Copilot/Studio integration is not implemented.
+For OpenAI/Claude, launch from the terminal where credentials were set or restart Visual Studio after setting Windows user variables. Copilot also reads the current Windows user `COPILOT_GITHUB_TOKEN` on each request, unless a process-level token takes precedence. Do not place keys in appsettings or source control. No credentials from this Visual Studio chat are extracted.
 
 The official Copilot SDK pins/downloads its runtime during build (so the build output is larger). The bundled `copilot.exe` is a runtime wrapper and does NOT support interactive login. Install the full interactive CLI with `winget install GitHub.Copilot` if it is not already available, then follow the restricted-runtime authentication steps in `documentation/configuration.md`. The app uses `%USERPROFILE%\.copilot` by default rather than an IDE-injected `COPILOT_HOME`; configure `AI:Copilot:HomeDirectory` only for an intentional custom login home. The app checks authentication before submitting incident evidence.
 
