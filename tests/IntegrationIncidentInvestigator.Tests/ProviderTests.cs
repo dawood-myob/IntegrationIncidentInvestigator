@@ -130,7 +130,7 @@ public sealed class ProviderTests
         Assert.Equal(expectedHome, options.BaseDirectory);
         Assert.True(Path.IsPathFullyQualified(options.BaseDirectory));
         Assert.Equal(CopilotClientMode.Empty, options.Mode);
-        Assert.True(options.UseLoggedInUser);
+        Assert.Equal(string.IsNullOrWhiteSpace(options.GitHubToken), options.UseLoggedInUser);
         Assert.Equal(CopilotLogLevel.None, options.LogLevel);
         await using var client = new CopilotClient(options);
     }
@@ -151,11 +151,46 @@ public sealed class ProviderTests
             var options = CopilotLlmClient.CreateClientOptions(home);
             Assert.Equal(Path.GetFullPath(home), options.BaseDirectory);
             Assert.Equal(CopilotClientMode.Empty, options.Mode);
-            Assert.True(options.UseLoggedInUser);
+            Assert.Equal(string.IsNullOrWhiteSpace(options.GitHubToken), options.UseLoggedInUser);
         }
         finally
         {
             Environment.SetEnvironmentVariable("COPILOT_HOME", inheritedHome);
+        }
+    }
+
+    [Fact]
+    public void CopilotPreservesChildEnvironmentAndUsesOnlyConfiguredSdkToken()
+    {
+        var names = new[] { "COPILOT_GITHUB_TOKEN", "COPILOT_SDK_AUTH_TOKEN", "COPILOT_RUNTIME_PROCESS_FILE_LOGGING" };
+        var originals = names.ToDictionary(name => name, Environment.GetEnvironmentVariable);
+        var marker = "INCIDENT_ENVIRONMENT_TEST_" + Guid.NewGuid().ToString("N");
+        try
+        {
+            Environment.SetEnvironmentVariable("COPILOT_GITHUB_TOKEN", "configured-test-token");
+            Environment.SetEnvironmentVariable("COPILOT_SDK_AUTH_TOKEN", "host-token-do-not-reuse");
+            Environment.SetEnvironmentVariable("COPILOT_RUNTIME_PROCESS_FILE_LOGGING", "1");
+            Environment.SetEnvironmentVariable(marker, "preserved");
+            var options = CopilotLlmClient.CreateClientOptions();
+
+            Assert.Equal("configured-test-token", options.GitHubToken);
+            Assert.False(options.UseLoggedInUser);
+            Assert.NotNull(options.Environment);
+            Assert.Equal("preserved", options.Environment[marker]);
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Equal(Environment.GetEnvironmentVariable("SystemRoot"), options.Environment["SystemRoot"]);
+            }
+            Assert.Equal("true", options.Environment["COPILOT_GITHUB_TELEMETRY_DISABLED"]);
+            Assert.False(options.Environment.ContainsKey("COPILOT_SDK_AUTH_TOKEN"));
+            Assert.False(options.Environment.ContainsKey("COPILOT_RUNTIME_PROCESS_FILE_LOGGING"));
+            Assert.Equal("host-token-do-not-reuse", Environment.GetEnvironmentVariable("COPILOT_SDK_AUTH_TOKEN"));
+        }
+        finally
+        {
+            foreach (var original in originals)
+                Environment.SetEnvironmentVariable(original.Key, original.Value);
+            Environment.SetEnvironmentVariable(marker, null);
         }
     }
 

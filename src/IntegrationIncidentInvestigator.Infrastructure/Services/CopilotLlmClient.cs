@@ -62,13 +62,26 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
         var copilotHome = string.IsNullOrWhiteSpace(homeDirectory)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot")
             : Path.GetFullPath(homeDirectory);
+        var token = Environment.GetEnvironmentVariable("COPILOT_GITHUB_TOKEN");
+        if (string.IsNullOrWhiteSpace(token) && OperatingSystem.IsWindows())
+        {
+            token = Environment.GetEnvironmentVariable("COPILOT_GITHUB_TOKEN", EnvironmentVariableTarget.User);
+        }
+
+        // The SDK replaces the entire child environment, rather than overlaying these values.
+        var environment = Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
+            .ToDictionary(entry => (string)entry.Key, entry => (string)entry.Value!, StringComparer.OrdinalIgnoreCase);
+        environment.Remove("COPILOT_SDK_AUTH_TOKEN");
+        environment.Remove("COPILOT_RUNTIME_PROCESS_FILE_LOGGING");
+        environment["COPILOT_GITHUB_TELEMETRY_DISABLED"] = "true";
         return new CopilotClientOptions
         {
             Mode = CopilotClientMode.Empty,
             BaseDirectory = copilotHome,
-            UseLoggedInUser = true,
+            GitHubToken = string.IsNullOrWhiteSpace(token) ? null : token,
+            UseLoggedInUser = string.IsNullOrWhiteSpace(token),
             LogLevel = CopilotLogLevel.None,
-            Environment = new Dictionary<string, string> { ["COPILOT_GITHUB_TELEMETRY_DISABLED"] = "true" },
+            Environment = environment,
             WorkingDirectory = AppContext.BaseDirectory
         };
     }
