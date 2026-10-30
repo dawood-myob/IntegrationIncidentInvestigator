@@ -19,21 +19,23 @@
 - `Investigation:MaxImagePreviewMB`: maximum image size loaded for local screenshot preview; image bytes are not sent to the AI provider.
 - `Storage:Database`: SQLite path. Relative paths are rooted under the user's Local Application Data application folder.
 
-Copilot's restricted SDK Empty mode requires an explicit local persistence directory even when memory and the shared session store are disabled. The adapter uses the same home as CLI sign-in: `COPILOT_HOME` when set, otherwise `%USERPROFILE%\.copilot`. Sign in with the same Windows account and environment used to launch the app. No token is copied into appsettings; SDK-owned config/session files may reside in this directory.
+Copilot's restricted SDK Empty mode requires an explicit local persistence directory even when memory and the shared session store are disabled. The adapter defaults to `%USERPROFILE%\.copilot` and deliberately ignores inherited `COPILOT_HOME`: Visual Studio can inject a private IDE home that differs from a normal terminal's login home. To deliberately use another home, set the non-secret `AI:Copilot:HomeDirectory` setting and use the same path for CLI sign-in. No token is copied into appsettings; SDK-owned config/session files may reside in this directory.
 
 ## Copilot authentication
 
 Install the interactive CLI if needed with `winget install GitHub.Copilot`, then open a fresh PowerShell window. `copilot --version` must work. Do not use the executable bundled under the app output for login; it supports runtime transport only.
 
-The pinned SDK's Empty mode disables the OS keychain and uses its explicit Copilot home. To match that mode during CLI sign-in, run:
+The pinned SDK's Empty mode disables the OS keychain and uses its explicit Copilot home. To match that mode during CLI sign-in, open a separate PowerShell window and run:
 
 ```powershell
+$env:COPILOT_HOME = Join-Path $env:USERPROFILE '.copilot'
 $env:COPILOT_DISABLE_KEYTAR = '1'
-copilot login
-Remove-Item Env:\COPILOT_DISABLE_KEYTAR
+copilot login --device-code
 ```
 
-Complete the browser/device authorization using your Copilot-enabled account. This storage mode may save the OAuth credential in files under `%USERPROFILE%\.copilot` (or `COPILOT_HOME`) rather than Windows Credential Manager. Protect that directory and never commit or share its files. Use the same Windows account and Copilot home as the app. Alternatively, configure a user-owned fine-grained GitHub token with the Copilot Requests permission in `COPILOT_GITHUB_TOKEN`; keep it in environment variables, never appsettings or chat. Organization policy may restrict CLI or model access. The app now checks SDK authentication before sending any evidence; a successful login is not proof of access to every suggested model.
+Open the URL printed by the CLI, enter the device code in that browser page, and finish authorization with your Copilot-enabled account. Wait for the terminal to confirm success, then close that PowerShell window and restart the app. Do not share the device code or tokens. If `AI:Copilot:HomeDirectory` is configured, replace the first command's path with that directory. Merely running the command is not a completed login.
+
+This storage mode may save the OAuth credential in files under the selected Copilot home rather than Windows Credential Manager. Protect that directory and never commit or share its files. CLI versions can differ in credential-store behavior; if login confirms success but the SDK still reports unauthenticated, use a user-owned fine-grained GitHub token with the Copilot Requests permission in `COPILOT_GITHUB_TOKEN` (Windows user environment variables), then restart Visual Studio and the app. Never put tokens in appsettings or chat. Organization policy may restrict CLI or model access. The app checks SDK authentication before sending any evidence; a successful login is not proof of access to every suggested model.
 
 Provider and editable model selectors operate for the current session; changing providers restores the last selected model for that provider. Suggestions are configurable, not downloaded model-entitlement lists; model IDs and permissions vary by account. No fallback is attempted if a model/key is unavailable. Restart the app after editing appsettings and restart Visual Studio after changing user environment variables. Scan/evidence review do not require credentials, but investigation does.
 

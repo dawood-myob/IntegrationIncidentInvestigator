@@ -37,6 +37,7 @@ public sealed class CopilotProviderSettings
 {
     public string Model { get; set; } = "gpt-4.1";
     public string[] Models { get; set; } = ["gpt-4.1", "gpt-5", "claude-sonnet-4.6"];
+    public string? HomeDirectory { get; set; }
 }
 
 public sealed class LlmInvestigationResponse

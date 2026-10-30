@@ -11,7 +11,8 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
 {
     public async Task<string> CompleteAsync(LlmRequest request, CancellationToken cancellationToken)
     {
-        await using var client = new CopilotClient(CreateClientOptions());
+        var options = CreateClientOptions(settings.Value.Copilot.HomeDirectory);
+        await using var client = new CopilotClient(options);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(settings.Value.TimeoutSeconds));
         try
@@ -20,7 +21,7 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
             var authentication = await client.GetAuthStatusAsync(timeout.Token);
             if (!authentication.IsAuthenticated)
             {
-                throw new UnauthorizedAccessException("GitHub Copilot is not signed in for this SDK runtime. Use the installed interactive Copilot CLI, not the bundled SDK executable. See documentation/configuration.md for matching the restricted runtime's credential storage. No incident evidence was sent.");
+                throw new UnauthorizedAccessException($"GitHub Copilot is not signed in for this SDK runtime. In PowerShell, set COPILOT_HOME to '{options.BaseDirectory}' and COPILOT_DISABLE_KEYTAR to '1', then run 'copilot login --device-code' using the interactive CLI and complete browser authorization. See documentation/configuration.md. No incident evidence was sent.");
             }
 
             await using var session = await client.CreateSessionAsync(CreateSessionConfig(request), timeout.Token);
@@ -55,12 +56,12 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
         }
     }
 
-    public static CopilotClientOptions CreateClientOptions()
+    public static CopilotClientOptions CreateClientOptions(string? homeDirectory = null)
     {
-        var configuredHome = Environment.GetEnvironmentVariable("COPILOT_HOME");
-        var copilotHome = string.IsNullOrWhiteSpace(configuredHome)
+        // Visual Studio can inject its own COPILOT_HOME into debugged applications.
+        var copilotHome = string.IsNullOrWhiteSpace(homeDirectory)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot")
-            : Path.GetFullPath(configuredHome);
+            : Path.GetFullPath(homeDirectory);
         return new CopilotClientOptions
         {
             Mode = CopilotClientMode.Empty,

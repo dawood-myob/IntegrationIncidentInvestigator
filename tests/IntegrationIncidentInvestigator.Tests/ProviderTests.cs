@@ -124,10 +124,7 @@ public sealed class ProviderTests
     public async Task CopilotClientConstructsWithExplicitCliHomeInEmptyMode()
     {
         var options = CopilotLlmClient.CreateClientOptions();
-        var configuredHome = Environment.GetEnvironmentVariable("COPILOT_HOME");
-        var expectedHome = string.IsNullOrWhiteSpace(configuredHome)
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot")
-            : Path.GetFullPath(configuredHome);
+        var expectedHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot");
 
         Assert.NotNull(options.BaseDirectory);
         Assert.Equal(expectedHome, options.BaseDirectory);
@@ -136,6 +133,30 @@ public sealed class ProviderTests
         Assert.True(options.UseLoggedInUser);
         Assert.Equal(CopilotLogLevel.None, options.LogLevel);
         await using var client = new CopilotClient(options);
+    }
+
+    [Fact]
+    public void CopilotHomeIgnoresInheritedIdeHomeAndSupportsExplicitConfiguration()
+    {
+        var inheritedHome = Environment.GetEnvironmentVariable("COPILOT_HOME");
+        var ideHome = Path.Combine(Path.GetTempPath(), "ide-copilot-home");
+        var home = Path.Combine(Path.GetTempPath(), "incident-copilot-home");
+        try
+        {
+            Environment.SetEnvironmentVariable("COPILOT_HOME", ideHome);
+            var defaults = CopilotLlmClient.CreateClientOptions();
+            Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot"), defaults.BaseDirectory);
+            Assert.Equal(ideHome, Environment.GetEnvironmentVariable("COPILOT_HOME"));
+
+            var options = CopilotLlmClient.CreateClientOptions(home);
+            Assert.Equal(Path.GetFullPath(home), options.BaseDirectory);
+            Assert.Equal(CopilotClientMode.Empty, options.Mode);
+            Assert.True(options.UseLoggedInUser);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("COPILOT_HOME", inheritedHome);
+        }
     }
 
     [Fact]
