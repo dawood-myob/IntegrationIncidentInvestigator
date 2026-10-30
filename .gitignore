@@ -1,0 +1,37 @@
+# Build and IDE output
+**/bin/
+**/obj/
+.vs/
+.vscode/
+*.user
+*.suo
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Local incident storage and generated investigations
+/data/*
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+investigation.json
+investigation.txt
+teams-summary.txt
+jira.txt
+jira-comment.txt
+attachment-recommendations.txt

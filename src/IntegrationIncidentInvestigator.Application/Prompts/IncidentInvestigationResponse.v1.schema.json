@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "incidentSummary": { "type": "string" },
+    "teamsSummary": { "type": "string" },
+    "problemStatement": { "type": "string" },
+    "rootCause": { "type": "string" },
+    "rootCauseConfidence": { "type": "string", "enum": ["Unknown", "Possible", "Likely", "Confirmed"] },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "recommendedActions": { "type": "array", "items": { "type": "string" } },
+    "affectedSystems": { "type": "array", "items": { "type": "string" } },
+    "errorMessages": { "type": "array", "items": { "type": "string" } },
+    "correlationIds": { "type": "array", "items": { "type": "string" } },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fileName": { "type": "string" },
+          "recommended": { "type": "boolean" },
+          "reason": { "type": "string" }
+        },
+        "required": ["fileName", "recommended", "reason"]
+      }
+    },
+    "jiraStory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "objective": { "type": "string" },
+        "userStory": { "type": "string" },
+        "description": { "type": "string" },
+        "errorsObserved": { "type": "array", "items": { "type": "string" } },
+        "scope": { "type": "array", "items": { "type": "string" } },
+        "acceptanceCriteria": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["title", "objective", "userStory", "description", "errorsObserved", "scope", "acceptanceCriteria"]
+    },
+    "jiraComment": { "type": "string" }
+  },
+  "required": [
+    "incidentSummary", "teamsSummary", "problemStatement", "rootCause", "rootCauseConfidence",
+    "evidence", "recommendedActions", "affectedSystems", "errorMessages", "correlationIds",
+    "attachments", "jiraStory", "jiraComment"
+  ]
+}
