@@ -19,6 +19,8 @@
 - `Investigation:MaxImagePreviewMB`: maximum image size loaded for local screenshot preview; image bytes are not sent to the AI provider.
 - `Storage:Database`: SQLite path. Relative paths are rooted under the user's Local Application Data application folder.
 
+Copilot's restricted SDK Empty mode requires an explicit local persistence directory even when memory and the shared session store are disabled. The adapter uses the same home as CLI sign-in: `COPILOT_HOME` when set, otherwise `%USERPROFILE%\.copilot`. Sign in with the same Windows account and environment used to launch the app. No token is copied into appsettings; SDK-owned config/session files may reside in this directory.
+
 Provider and editable model selectors operate for the current session; changing providers restores the last selected model for that provider. Suggestions are configurable, not downloaded model-entitlement lists; model IDs and permissions vary by account. No fallback is attempted if a model/key is unavailable. Restart the app after editing appsettings and restart Visual Studio after changing user environment variables. Scan/evidence review do not require credentials, but investigation does.
 
 Never commit credentials or paste them into chat. Configure the relevant key in Windows user environment variables or sign in separately to GitHub Copilot. No credentials are copied from Visual Studio chat. Do not submit company evidence without approval of the provider's data-handling/privacy policy.

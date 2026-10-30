@@ -11,14 +11,7 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
 {
     public async Task<string> CompleteAsync(LlmRequest request, CancellationToken cancellationToken)
     {
-        await using var client = new CopilotClient(new CopilotClientOptions
-        {
-            Mode = CopilotClientMode.Empty,
-            UseLoggedInUser = true,
-            LogLevel = CopilotLogLevel.None,
-            Environment = new Dictionary<string, string> { ["COPILOT_GITHUB_TELEMETRY_DISABLED"] = "true" },
-            WorkingDirectory = AppContext.BaseDirectory
-        });
+        await using var client = new CopilotClient(CreateClientOptions());
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(settings.Value.TimeoutSeconds));
         try
@@ -54,6 +47,23 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
             logger.LogWarning("GitHub Copilot request failed ({ErrorType}).", exception.GetType().Name);
             throw new InvalidOperationException("GitHub Copilot could not complete the request. Install/sign in to Copilot CLI with 'copilot login', check your Copilot subscription and selected model, then retry. Microsoft 365 Copilot credentials cannot be used here.", exception);
         }
+    }
+
+    public static CopilotClientOptions CreateClientOptions()
+    {
+        var configuredHome = Environment.GetEnvironmentVariable("COPILOT_HOME");
+        var copilotHome = string.IsNullOrWhiteSpace(configuredHome)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot")
+            : Path.GetFullPath(configuredHome);
+        return new CopilotClientOptions
+        {
+            Mode = CopilotClientMode.Empty,
+            BaseDirectory = copilotHome,
+            UseLoggedInUser = true,
+            LogLevel = CopilotLogLevel.None,
+            Environment = new Dictionary<string, string> { ["COPILOT_GITHUB_TELEMETRY_DISABLED"] = "true" },
+            WorkingDirectory = AppContext.BaseDirectory
+        };
     }
 
     public static SessionConfig CreateSessionConfig(LlmRequest request) => new()

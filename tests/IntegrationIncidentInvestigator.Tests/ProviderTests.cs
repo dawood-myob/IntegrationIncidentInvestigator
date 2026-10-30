@@ -121,6 +121,24 @@ public sealed class ProviderTests
     }
 
     [Fact]
+    public async Task CopilotClientConstructsWithExplicitCliHomeInEmptyMode()
+    {
+        var options = CopilotLlmClient.CreateClientOptions();
+        var configuredHome = Environment.GetEnvironmentVariable("COPILOT_HOME");
+        var expectedHome = string.IsNullOrWhiteSpace(configuredHome)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".copilot")
+            : Path.GetFullPath(configuredHome);
+
+        Assert.NotNull(options.BaseDirectory);
+        Assert.Equal(expectedHome, options.BaseDirectory);
+        Assert.True(Path.IsPathFullyQualified(options.BaseDirectory));
+        Assert.Equal(CopilotClientMode.Empty, options.Mode);
+        Assert.True(options.UseLoggedInUser);
+        Assert.Equal(CopilotLogLevel.None, options.LogLevel);
+        await using var client = new CopilotClient(options);
+    }
+
+    [Fact]
     public void CopilotSessionHasNoToolsMemoryOrSessionStore()
     {
         var configuration = CopilotLlmClient.CreateSessionConfig(BuildRequest());
