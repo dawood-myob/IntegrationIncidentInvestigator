@@ -9,7 +9,7 @@
 - `AI:Claude:Endpoint`: HTTPS Anthropic Messages URL, default `https://api.anthropic.com/v1/messages`.
 - `AI:Claude:ApiKeyEnvironmentVariable`: defaults to `ANTHROPIC_API_KEY`.
 - `AI:Claude:Model` / `AI:Claude:Models`: default and suggested Claude IDs (Sonnet/Opus). Use a model with JSON structured-output support.
-- `AI:Copilot:Model` / `AI:Copilot:Models`: default and suggested GitHub Copilot model IDs. Sign in with `copilot login`; this does not use a Microsoft 365 Copilot subscription or an OpenAI key. If needed, locate the bundled `copilot.exe` under `bin\Debug\net10.0-windows\runtimes\win-x64\native` (RID differs on ARM64).
+- `AI:Copilot:Model` / `AI:Copilot:Models`: default and suggested GitHub Copilot model IDs. Sign in using the full interactive Copilot CLI as described below; this does not use a Microsoft 365 Copilot subscription or an OpenAI key. The bundled SDK `copilot.exe` is a runtime wrapper, NOT an interactive login executable.
 - `AI:MaxOutputTokens`: output budget, default 8192; valid range 1024-32768. Reduce evidence or raise the budget for incomplete responses, subject to model limits.
 - `AI:TimeoutSeconds`: request timeout, default 180; valid range 30-600.
 - `Investigation:MaxFileSizeMB`: maximum size for non-log text extraction. Logs are streamed and bounded by selected context.
@@ -20,6 +20,20 @@
 - `Storage:Database`: SQLite path. Relative paths are rooted under the user's Local Application Data application folder.
 
 Copilot's restricted SDK Empty mode requires an explicit local persistence directory even when memory and the shared session store are disabled. The adapter uses the same home as CLI sign-in: `COPILOT_HOME` when set, otherwise `%USERPROFILE%\.copilot`. Sign in with the same Windows account and environment used to launch the app. No token is copied into appsettings; SDK-owned config/session files may reside in this directory.
+
+## Copilot authentication
+
+Install the interactive CLI if needed with `winget install GitHub.Copilot`, then open a fresh PowerShell window. `copilot --version` must work. Do not use the executable bundled under the app output for login; it supports runtime transport only.
+
+The pinned SDK's Empty mode disables the OS keychain and uses its explicit Copilot home. To match that mode during CLI sign-in, run:
+
+```powershell
+$env:COPILOT_DISABLE_KEYTAR = '1'
+copilot login
+Remove-Item Env:\COPILOT_DISABLE_KEYTAR
+```
+
+Complete the browser/device authorization using your Copilot-enabled account. This storage mode may save the OAuth credential in files under `%USERPROFILE%\.copilot` (or `COPILOT_HOME`) rather than Windows Credential Manager. Protect that directory and never commit or share its files. Use the same Windows account and Copilot home as the app. Alternatively, configure a user-owned fine-grained GitHub token with the Copilot Requests permission in `COPILOT_GITHUB_TOKEN`; keep it in environment variables, never appsettings or chat. Organization policy may restrict CLI or model access. The app now checks SDK authentication before sending any evidence; a successful login is not proof of access to every suggested model.
 
 Provider and editable model selectors operate for the current session; changing providers restores the last selected model for that provider. Suggestions are configurable, not downloaded model-entitlement lists; model IDs and permissions vary by account. No fallback is attempted if a model/key is unavailable. Restart the app after editing appsettings and restart Visual Studio after changing user environment variables. Scan/evidence review do not require credentials, but investigation does.
 

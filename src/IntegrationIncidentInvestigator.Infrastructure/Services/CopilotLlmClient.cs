@@ -17,6 +17,12 @@ public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILog
         try
         {
             await client.StartAsync(timeout.Token);
+            var authentication = await client.GetAuthStatusAsync(timeout.Token);
+            if (!authentication.IsAuthenticated)
+            {
+                throw new UnauthorizedAccessException("GitHub Copilot is not signed in for this SDK runtime. Use the installed interactive Copilot CLI, not the bundled SDK executable. See documentation/configuration.md for matching the restricted runtime's credential storage. No incident evidence was sent.");
+            }
+
             await using var session = await client.CreateSessionAsync(CreateSessionConfig(request), timeout.Token);
             try
             {
