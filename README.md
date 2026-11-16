@@ -1,6 +1,12 @@
 # Integration Incident Investigator
 
-A Windows WPF application for reviewing local integration-incident evidence, creating an evidence-based investigation with a configurable AI provider, checking recurrence against local history, and preparing copy-ready Teams/Jira content. The first version does not connect to Jira or Teams and never creates tickets or sends messages.
+<p align="center">
+  <img src="src/IntegrationIncidentInvestigator.App/Assets/incident-investigator-logo.png" alt="Integration Incident Investigator logo" width="144">
+</p>
+
+A Windows desktop app for reviewing integration-incident files, preparing bounded evidence for an explicitly selected AI provider, and producing investigation results plus copy-ready Teams summaries and Jira drafts. It also checks for likely recurrence in local history. It does **not** connect to Jira or Teams, create tickets, post messages, upload attachments, or send screenshot pixels.
+
+The home screen shows provider readiness indicators: OpenAI/Claude lights reflect whether the configured API key is present; the GitHub Copilot light checks local CLI sign-in. These checks do not confirm network access, billing, or model availability, and do not send incident data.
 
 ## Start here
 
@@ -41,7 +47,7 @@ Select an incident directory, scan and review the files, enter optional system/i
 
 ## AI provider configuration
 
-`appsettings.json` contains non-secret settings and defaults to `OpenAICompatible` with `gpt-4.1` for stronger analysis than the previous mini-model default.
+`appsettings.json` contains non-secret settings and defaults to `OpenAICompatible` with `gpt-4.1`. Provider and model availability depends on your configuration, account, and provider policies.
 
 | Provider | Setup | Model selection |
 |---|---|---|

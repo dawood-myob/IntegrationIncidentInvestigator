@@ -15,10 +15,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\incident-investigator.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\incident-investigator.ico" />
+    <Resource Include="Assets\incident-investigator-logo.png" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="IntegrationIncidentInvestigator.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Integration Incident Investigator" Height="900" Width="1280" MinHeight="720" MinWidth="1000"
+        Title="Integration Incident Investigator" Icon="Assets/incident-investigator.ico" Height="900" Width="1280" MinHeight="720" MinWidth="1000"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -17,7 +17,10 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Integration Incident Investigator" FontSize="24" FontWeight="Bold" Margin="0,0,0,12" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <Image Source="Assets/incident-investigator-logo.png" Width="44" Height="44" Stretch="Uniform" Margin="0,0,12,0" />
+            <TextBlock Text="Integration Incident Investigator" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" />
+        </StackPanel>
 
         <Grid Grid.Row="1" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
