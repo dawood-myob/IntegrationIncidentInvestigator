@@ -24,6 +24,7 @@ public static class InfrastructureRegistration
         services.AddSingleton<OpenAiCompatibleLlmClient>();
         services.AddSingleton<ClaudeLlmClient>();
         services.AddSingleton<CopilotLlmClient>();
+        services.AddSingleton<IAiProviderStatusService, AiProviderStatusService>();
         services.AddSingleton<ILlmClient, ProviderSwitchingLlmClient>();
         return services;
     }

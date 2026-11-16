@@ -30,6 +30,7 @@ public sealed class ProviderTests
         Assert.IsType<ProviderSwitchingLlmClient>(provider.GetRequiredService<ILlmClient>());
         Assert.IsType<ClaudeLlmClient>(provider.GetRequiredService<ClaudeLlmClient>());
         Assert.IsType<CopilotLlmClient>(provider.GetRequiredService<CopilotLlmClient>());
+        Assert.IsType<AiProviderStatusService>(provider.GetRequiredService<IAiProviderStatusService>());
         Assert.DoesNotContain("Mock", AiProviders.Supported);
     }
 

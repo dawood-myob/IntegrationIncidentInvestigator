@@ -14,9 +14,13 @@ public partial class MainWindow : Window
         InitializeComponent();
         ViewModel = viewModel;
         DataContext = viewModel;
+        Loaded += Window_Loaded;
     }
 
     public MainWindowViewModel ViewModel { get; }
+
+    private void Window_Loaded(object sender, RoutedEventArgs eventArgs) =>
+        ViewModel.RefreshProviderStatusCommand.Execute(null);
 
     private void Browse_Click(object sender, RoutedEventArgs eventArgs)
     {

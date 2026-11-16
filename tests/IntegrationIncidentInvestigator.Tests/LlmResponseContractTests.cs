@@ -16,6 +16,7 @@ public sealed class LlmResponseContractTests
     public void PromptIncludesSchemaMatchingEveryResponseProperty()
     {
         var request = BuildRequest();
+        Assert.Contains("source tag using the exact supplied filename", request.SystemPrompt);
         Assert.True(request.ResponseSchema.HasValue);
         var schema = request.ResponseSchema.Value;
         var properties = schema.GetProperty("properties");

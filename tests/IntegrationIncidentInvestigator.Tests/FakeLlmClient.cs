@@ -4,8 +4,12 @@ using IntegrationIncidentInvestigator.Application.Models;
 
 namespace IntegrationIncidentInvestigator.Tests;
 
-internal sealed class FakeLlmClient : ILlmClient
+internal sealed class FakeLlmClient(params string[] evidence) : ILlmClient
 {
+    private readonly string[] _evidence = evidence.Length == 0
+        ? ["The problem description reports an integration failure."]
+        : evidence;
+
     public Task<string> CompleteAsync(LlmRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -16,7 +20,7 @@ internal sealed class FakeLlmClient : ILlmClient
             ProblemStatement = "Synthetic timeout",
             RootCause = "Unknown; no cause confirmed by the synthetic fixture.",
             RootCauseConfidence = "Unknown",
-            Evidence = ["The problem description reports an integration failure."],
+            Evidence = _evidence.ToList(),
             JiraStory = new JiraStory
             {
                 Title = "Synthetic Integration Processing Errors",

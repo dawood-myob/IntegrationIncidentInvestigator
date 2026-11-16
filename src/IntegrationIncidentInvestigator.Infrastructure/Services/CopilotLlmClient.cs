@@ -9,6 +9,24 @@ namespace IntegrationIncidentInvestigator.Infrastructure.Services;
 
 public sealed class CopilotLlmClient(IOptions<AiProviderSettings> settings, ILogger<CopilotLlmClient> logger) : ILlmClient
 {
+    public async Task<bool> IsAuthenticatedAsync(CancellationToken cancellationToken)
+    {
+        var options = CreateClientOptions(settings.Value.Copilot.HomeDirectory);
+        await using var client = new CopilotClient(options);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        try
+        {
+            await client.StartAsync(timeout.Token);
+            var authentication = await client.GetAuthStatusAsync(timeout.Token);
+            return authentication.IsAuthenticated;
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("The GitHub Copilot sign-in status check timed out.", exception);
+        }
+    }
+
     public async Task<string> CompleteAsync(LlmRequest request, CancellationToken cancellationToken)
     {
         var options = CreateClientOptions(settings.Value.Copilot.HomeDirectory);

@@ -13,6 +13,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -62,7 +63,42 @@
             <TextBlock Grid.Row="2" Grid.ColumnSpan="7" Text="{Binding ProviderHelp}" TextWrapping="Wrap" Foreground="#FF555555" Margin="0,2,0,0" />
         </Grid>
 
-        <Grid Grid.Row="3" Margin="0,0,0,10">
+        <DockPanel Grid.Row="3" Margin="0,0,0,8" LastChildFill="False">
+            <ItemsControl ItemsSource="{Binding ProviderStatuses}" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,18,0" ToolTip="{Binding Details}">
+                            <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#FF808080" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                <Setter Property="Fill" Value="#FF20A447" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                                                <Setter Property="Fill" Value="#FFD93025" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding Provider}" FontWeight="SemiBold" Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding Status}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="Refresh status" Command="{Binding RefreshProviderStatusCommand}" Padding="10,4" Margin="14,0,0,0" />
+            <TextBlock Text="{Binding ProviderStatusMessage}" Foreground="#FF666666" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </DockPanel>
+
+        <Grid Grid.Row="4" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -79,12 +115,12 @@
             <Button Grid.Column="5" Content="Send reviewed evidence to AI" Command="{Binding SendEvidenceCommand}" Padding="14,7" />
         </Grid>
 
-        <Border Grid.Row="4" Background="#FFF8E1" Padding="8" Margin="0,0,0,8"
+        <Border Grid.Row="5" Background="#FFF8E1" Padding="8" Margin="0,0,0,8"
                 Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="#8A1C1C" />
         </Border>
 
-        <TabControl Grid.Row="5">
+        <TabControl Grid.Row="6">
             <TabItem Header="Incident files">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>

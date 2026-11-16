@@ -15,6 +15,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IIncidentInvestigationService _investigator;
     private readonly IInvestigationArtifactWriter _artifactWriter;
     private readonly IAiProviderSelector _providerSelector;
+    private readonly IAiProviderStatusService _providerStatusService;
     private readonly InvestigationSettings _settings;
     private readonly ILogger<MainWindowViewModel> _logger;
     private CancellationTokenSource? _cancellation;
@@ -37,12 +38,14 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(IIncidentFileScanner scanner, IIncidentInvestigationService investigator,
         IInvestigationArtifactWriter artifactWriter, IAiProviderSelector providerSelector,
-        IOptions<InvestigationSettings> settings, ILogger<MainWindowViewModel> logger)
+        IAiProviderStatusService providerStatusService, IOptions<InvestigationSettings> settings,
+        ILogger<MainWindowViewModel> logger)
     {
         _scanner = scanner;
         _investigator = investigator;
         _artifactWriter = artifactWriter;
         _providerSelector = providerSelector;
+        _providerStatusService = providerStatusService;
         _settings = settings.Value;
         _logger = logger;
         ProviderOptions = AiProviders.Supported.ToArray();
@@ -53,6 +56,13 @@ public sealed class MainWindowViewModel : ObservableObject
         SendEvidenceCommand = new AsyncRelayCommand(SendEvidenceAsync, () => Prepared is not null && !IsBusy && !string.IsNullOrWhiteSpace(SelectedModel));
         CancelCommand = new RelayCommand(() => _cancellation?.Cancel(), () => IsBusy);
         SaveOutputsCommand = new AsyncRelayCommand(SaveOutputsAsync, () => Result is not null && !IsBusy);
+        RefreshProviderStatusCommand = new AsyncRelayCommand(RefreshProviderStatusesAsync, () => !IsCheckingProviderStatuses);
+        ProviderStatuses =
+        [
+            new AiProviderAvailability("ChatGPT / OpenAI API", null, "Checking...", "Checking for the configured API key."),
+            new AiProviderAvailability("Claude API", null, "Checking...", "Checking for the configured API key."),
+            new AiProviderAvailability("GitHub Copilot", null, "Checking...", "Checking Copilot CLI sign-in.")
+        ];
         JiraModes = ["Create New Jira", "Comment on Existing Jira"];
     }
 
@@ -64,7 +74,11 @@ public sealed class MainWindowViewModel : ObservableObject
     public AsyncRelayCommand SendEvidenceCommand { get; }
     public RelayCommand CancelCommand { get; }
     public AsyncRelayCommand SaveOutputsCommand { get; }
+    public AsyncRelayCommand RefreshProviderStatusCommand { get; }
+    public ObservableCollection<AiProviderAvailability> ProviderStatuses { get; }
     public ObservableCollection<EvidenceExcerpt> PreparedEvidence { get; } = [];
+    public bool IsCheckingProviderStatuses { get; private set; }
+    public string ProviderStatusMessage => IsCheckingProviderStatuses ? "Checking provider availability..." : "Status check sends no incident data.";
     public bool HasScanned { get; private set; }
 
     public string SourceFolder { get => _sourceFolder; set { if (SetProperty(ref _sourceFolder, value)) { ScanCommand.NotifyCanExecuteChanged(); InvalidatePrepared(); } } }
@@ -106,6 +120,48 @@ public sealed class MainWindowViewModel : ObservableObject
         _ => "OpenAI API: requires INCIDENT_AI_API_KEY and API billing. Try gpt-4.1 or an available reasoning model for complex evidence. Model suggestions are editable, not guaranteed account entitlements."
     };
     public bool IsIdle => !IsBusy;
+
+    public async Task RefreshProviderStatusesAsync()
+    {
+        if (IsCheckingProviderStatuses)
+        {
+            return;
+        }
+
+        IsCheckingProviderStatuses = true;
+        OnPropertyChanged(nameof(IsCheckingProviderStatuses));
+        OnPropertyChanged(nameof(ProviderStatusMessage));
+        RefreshProviderStatusCommand.NotifyCanExecuteChanged();
+        try
+        {
+            var statuses = await _providerStatusService.CheckAsync(CancellationToken.None);
+            ProviderStatuses.Clear();
+            foreach (var status in statuses)
+            {
+                ProviderStatuses.Add(status);
+            }
+
+            if (ErrorMessage == "AI provider status could not be checked. Retry using Refresh status.")
+            {
+                ErrorMessage = "";
+            }
+        }
+        catch (Exception exception) when (exception is IOException or InvalidOperationException
+            or UnauthorizedAccessException or TimeoutException or System.ComponentModel.Win32Exception)
+        {
+            _logger.LogWarning("AI provider status check failed ({ErrorType}).", exception.GetType().Name);
+            ErrorMessage = "AI provider status could not be checked. Retry using Refresh status.";
+            ProviderStatuses.Clear();
+            ProviderStatuses.Add(new AiProviderAvailability("Provider status", null, "Check failed", "Retry the provider status check."));
+        }
+        finally
+        {
+            IsCheckingProviderStatuses = false;
+            OnPropertyChanged(nameof(IsCheckingProviderStatuses));
+            OnPropertyChanged(nameof(ProviderStatusMessage));
+            RefreshProviderStatusCommand.NotifyCanExecuteChanged();
+        }
+    }
     public string SelectedJiraMode { get => _selectedJiraMode; set { if (SetProperty(ref _selectedJiraMode, value)) OnPropertyChanged(nameof(SelectedJiraText)); } }
     public string ExistingIssueReference { get => _existingIssueReference; set { if (SetProperty(ref _existingIssueReference, value)) OnPropertyChanged(nameof(SelectedJiraText)); } }
     public string StatusMessage { get => _statusMessage; set => SetProperty(ref _statusMessage, value); }

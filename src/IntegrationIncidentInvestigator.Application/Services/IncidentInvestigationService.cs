@@ -156,7 +156,7 @@ public sealed partial class IncidentInvestigationService(
                 || historyIds.Any(id => item.Contains(id, StringComparison.OrdinalIgnoreCase));
             if (!referencesEvidence)
             {
-                throw new InvalidDataException("The AI returned an evidence statement without a supplied source reference. No output was generated.");
+                throw new InvalidDataException("The AI returned an evidence statement without citing a supplied filename, problem description, or historical incident. No output was generated. Reduce the selected evidence and retry if this persists.");
             }
         }
 

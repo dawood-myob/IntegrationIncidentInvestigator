@@ -311,6 +311,31 @@ public sealed class InvestigationTests
     }
 
     [Fact]
+    public async Task InvestigationRejectsEvidenceWithoutSuppliedSourceReference()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var service = new IncidentInvestigationService(new FileContentExtractor(), new InMemoryHistoryRepository(),
+                new InvestigationPromptBuilder(Options.Create(new AiProviderSettings())), new FakeLlmClient("A timeout occurred."),
+                new InvestigationResponseParser(), new ErrorFingerprinter(), new RecurrenceMatcher(),
+                Options.Create(new InvestigationSettings()), NullLogger<IncidentInvestigationService>.Instance);
+            var prepared = new PreparedInvestigation(
+                new IncidentContext(directory, "INC-TEST", "", [], "Test", "Test"),
+                [new EvidenceExcerpt("integration.log", FileCategory.IntegrationLog, "ERROR timeout", "", 12, 12)], [], "", "");
+
+            var error = await Assert.ThrowsAsync<InvalidDataException>(() => service.InvestigateAsync(prepared, null, CancellationToken.None));
+
+            Assert.Contains("without citing a supplied filename", error.Message);
+            Assert.Contains("Reduce the selected evidence and retry", error.Message);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PreparationDoesNotCallLlmUntilExplicitInvestigation()
     {
         var directory = CreateTempDirectory();
